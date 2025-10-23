@@ -1,3 +1,3 @@
 from fastapi import APIRouter
 
-router = APIRouter()
+analytics_router = APIRouter()
