@@ -21,7 +21,6 @@ class AnalyticsService:
 
         clean_pg_url = PG_CONN_STRING.replace("+asyncpg", "")
         def execute_sync_query():
-            # DuckDB підключення для ЗАПИСУ (read_only=False)
             with duckdb.connect(database=DUCKDB_FILE, read_only=False) as write_conn:
                 sql_query = f"""
                     INSTALL postgres;
@@ -52,7 +51,6 @@ class AnalyticsService:
                 print(f"!!! Помилка синхронізації: {e}")
         except Exception as e:
             print(f"!!! Помилка синхронізації: {e}")
-            # Можливо, вам знадобиться log.error(e) тут, залежно від вашої конфігурації логування
 
 
     def get_dau(self, from_date: date, to_date: date) -> pd.DataFrame:
@@ -116,11 +114,9 @@ class AnalyticsService:
 
         SELECT
             cohort_week,
-            -- Різниця у тижнях: 0 - тиждень приєднання, 1 - наступний тиждень тощо
             date_diff('week', cohort_week, activity_week) AS week_number,
             COUNT(DISTINCT user_id) AS retained_users
         FROM WeeklyActivity
-        -- Фільтруємо за кількістю вікон
         WHERE date_diff('week', cohort_week, activity_week) BETWEEN 0 AND {windows - 1}
         GROUP BY 1, 2
         ORDER BY 1, 2;
