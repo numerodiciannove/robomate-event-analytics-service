@@ -14,7 +14,7 @@ class Event(BaseORM):
     occurred_at = Column(DateTime(timezone=True), nullable=False)
     user_id = Column(Integer, nullable=False)
     event_type = Column(String, nullable=False)
-    properties = Column(JSON, nullable=True)
+    properties_json = Column(JSON, nullable=False)
 
     __table_args__ = (
         Index("idx_user_time_type", "user_id", "occurred_at", "event_type"),

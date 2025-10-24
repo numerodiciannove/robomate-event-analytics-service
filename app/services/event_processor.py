@@ -16,6 +16,7 @@ async def process_events(
     session: AsyncSession
 ) -> int:
     data_to_insert = [event.model_dump() for event in events]
+
     if not data_to_insert:
         return 0
 

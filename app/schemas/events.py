@@ -9,7 +9,7 @@ class EventSchema(BaseModel):
     occurred_at: datetime = Field(..., description="Timestamp when the event occurred (ISO-8601).")
     user_id: int = Field(..., description="User identifier.")
     event_type: str = Field(..., description="Type of the event (string).")
-    properties: Optional[Dict[str, Any]] = Field(None, description="Additional event properties (JSON object).")
+    properties_json: Optional[Dict[str, Any]] = Field(None, description="Additional event properties (JSON object).")
 
     class Config:
         from_attributes = True

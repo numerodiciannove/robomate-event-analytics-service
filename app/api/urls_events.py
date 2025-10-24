@@ -5,6 +5,7 @@ from pydantic import conlist
 from app.schemas.events import EventSchema
 from app.services import event_processor
 
+
 events_router = APIRouter()
 
 @events_router.post(
