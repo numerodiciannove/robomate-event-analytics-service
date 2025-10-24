@@ -6,54 +6,53 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 
 from app.core.config import settings
 
-
 PG_CONN_STRING = str(settings.db.url)
 DUCKDB_FILE = "analytics.duckdb"
 
 
+
 class AnalyticsService:
     def __init__(self):
-        self.duck_conn: duckdb.DuckDBPyConnection = duckdb.connect(database=DUCKDB_FILE, read_only=False)
         self.pg_engine: AsyncEngine = create_async_engine(PG_CONN_STRING)
-        self.duck_conn.execute("""
-                               CREATE TABLE IF NOT EXISTS synced_events
-                               (
-                                   event_id
-                                   UUID,
-                                   occurred_at
-                                   TIMESTAMP
-                                   WITH
-                                   TIME
-                                   ZONE,
-                                   user_id
-                                   INTEGER,
-                                   event_type
-                                   VARCHAR
-                               );
-                               """)
 
     async def sync_data_from_postgres(self):
-        """Читає всі дані з PostgreSQL та замінює таблицю у DuckDB."""
+        """Читає всі дані з PostgreSQL та замінює таблицю у DuckDB.
+        Використовує окреме підключення для запису."""
 
         clean_pg_url = PG_CONN_STRING.replace("+asyncpg", "")
+        def execute_sync_query():
+            # DuckDB підключення для ЗАПИСУ (read_only=False)
+            with duckdb.connect(database=DUCKDB_FILE, read_only=False) as write_conn:
+                sql_query = f"""
+                    INSTALL postgres;
+                    LOAD postgres;
 
-        sql_query = f"""
-            INSTALL postgres;
-            LOAD postgres;
+                    -- Використовуємо postgres_scan для читання з PG.
+                    -- CREATE OR REPLACE TABLE створює таблицю, якщо вона не існує, і повністю 
+                    -- замінює вміст, що усуває потребу в окремій логіці CREATE TABLE IF NOT EXISTS.
+                    CREATE OR REPLACE TABLE synced_events AS
+                    SELECT 
+                        event_id AS event_id, 
+                        occurred_at AS occurred_at, 
+                        CAST(user_id AS INTEGER) AS user_id, 
+                        event_type AS event_type
+                    FROM postgres_scan('{clean_pg_url}', 'public', 'events');
+                """
+                write_conn.execute(sql_query)
+                count = write_conn.execute('SELECT COUNT(*) FROM synced_events').fetchone()[0]
+                return count
 
-            CREATE OR REPLACE TABLE synced_events AS
-            SELECT 
-                event_id AS event_id, 
-                occurred_at AS occurred_at, 
-                CAST(user_id AS INTEGER) AS user_id,
-                event_type AS event_type
-            FROM postgres_scan('{clean_pg_url}', 'public', 'events');
-        """
-
-        await asyncio.to_thread(self.duck_conn.execute, sql_query)
-
-        print(
-            f"✅ Синхронізація завершена. Кількість записів: {self.duck_conn.execute('SELECT COUNT(*) FROM synced_events').fetchone()[0]}")
+        try:
+            record_count = await asyncio.to_thread(execute_sync_query)
+            print(f"✅ Синхронізація завершена. Кількість записів: {record_count}")
+        except duckdb.IOException as e:
+            if "Conflicting lock is held" in str(e):
+                print("⚠️ Синхронізація пропущена: Файл DuckDB заблоковано іншим процесом (Uvicorn worker).")
+            else:
+                print(f"!!! Помилка синхронізації: {e}")
+        except Exception as e:
+            print(f"!!! Помилка синхронізації: {e}")
+            # Можливо, вам знадобиться log.error(e) тут, залежно від вашої конфігурації логування
 
 
     def get_dau(self, from_date: date, to_date: date) -> pd.DataFrame:
@@ -68,7 +67,8 @@ class AnalyticsService:
             GROUP BY 1
             ORDER BY 1;
         """
-        return self.duck_conn.execute(query).fetchdf()
+        with duckdb.connect(database=DUCKDB_FILE, read_only=True) as read_conn:
+            return read_conn.execute(query).fetchdf()
 
     def get_top_events(self, from_date: date, to_date: date, limit: int = 10) -> pd.DataFrame:
         """GET /stats/top-events: Топ event_type за кількістю."""
@@ -83,7 +83,8 @@ class AnalyticsService:
             ORDER BY 2 DESC
             LIMIT {limit};
         """
-        return self.duck_conn.execute(query).fetchdf()
+        with duckdb.connect(database=DUCKDB_FILE, read_only=True) as read_conn:
+            return read_conn.execute(query).fetchdf()
 
     def get_retention(self, start_date: date, windows: int) -> pd.DataFrame:
         """
@@ -105,7 +106,6 @@ class AnalyticsService:
         WeeklyActivity AS (
             SELECT
                 fa.cohort_week,
-                -- Тиждень поточної активності
                 date_trunc('week', se.occurred_at) AS activity_week,
                 se.user_id
             FROM synced_events se
@@ -125,7 +125,8 @@ class AnalyticsService:
         GROUP BY 1, 2
         ORDER BY 1, 2;
         """
-        return self.duck_conn.execute(query).fetchdf()
+        with duckdb.connect(database=DUCKDB_FILE, read_only=True) as read_conn:
+            return read_conn.execute(query).fetchdf()
 
 
 analytics_service = AnalyticsService()
