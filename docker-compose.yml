@@ -16,7 +16,24 @@ services:
       timeout: 3s
       retries: 3
     restart: unless-stopped
+    networks:
+      - app_network
 
+  api:
+    container_name: events_api
+    build:
+      context: .
+    env_file:
+      - .env
+    command: uvicorn main:main_app --host 0.0.0.0 --port 5066 --workers 2
+    ports:
+      - "5066:5066"
+    volumes:
+      - ".:/app"
+    depends_on:
+      - pg
+    networks:
+      - app_network
 
 #  adminer:
 #    image: adminer
@@ -34,3 +51,6 @@ services:
 
 volumes:
   pgdata:
+
+networks:
+  app_network:
