@@ -1,0 +1,64 @@
+[
+  {
+    "event_id": "25a4b866-040b-466f-945c-148e4720f511",
+    "occurred_at": "2025-08-21T06:52:34+03:00",
+    "user_id": "1",
+    "event_type": "view_item",
+    "properties": {
+      "country": "PL",
+      "session_id": "5ef18783",
+      "item_id": "SKU6991",
+      "price": 118.64,
+      "currency": "USD"
+    }
+  },
+  {
+    "event_id": "7b5ed1eb-83df-4255-a283-87fd4140b95e",
+    "occurred_at": "2025-08-03T13:04:15+03:00",
+    "user_id": "2",
+    "event_type": "login",
+    "properties": {
+      "country": "PL",
+      "session_id": "533e684a",
+      "method": "apple"
+    }
+  },
+  {
+    "event_id": "6e562266-b131-4fa7-a118-d156cc427dd9",
+    "occurred_at": "2025-08-08T15:37:03+03:00",
+    "user_id": "18",
+    "event_type": "app_open",
+    "properties": {
+      "country": "SE",
+      "session_id": "787818bd",
+      "app_version": "1.9.6",
+      "os": "iOS"
+    }
+  },
+  {
+    "event_id": "717f914a-d45a-4b39-8834-de2aef8a2591",
+    "occurred_at": "2025-08-01T20:22:10+03:00",
+    "user_id": "39",
+    "event_type": "view_item",
+    "properties": {
+      "country": "SE",
+      "session_id": "d955e18b",
+      "item_id": "SKU2918",
+      "price": 101.27,
+      "currency": "USD"
+    }
+  },
+  {
+    "event_id": "717f914a-d45a-4b39-8834-de2aef8a2591",
+    "occurred_at": "2025-08-01T20:22:10+03:00",
+    "user_id": "39",
+    "event_type": "view_item",
+    "properties": {
+      "country": "SE",
+      "session_id": "d955e18b",
+      "item_id": "SKU2918",
+      "price": 101.27,
+      "currency": "USD"
+    }
+  }
+]
