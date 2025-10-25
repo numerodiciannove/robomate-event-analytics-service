@@ -1,7 +1,10 @@
 import asyncio
 from contextlib import asynccontextmanager
+
+import redis.asyncio as redis
 import uvicorn
 from fastapi import FastAPI
+from fastapi_limiter import FastAPILimiter
 from loguru import logger
 
 from app.api.routers import main_router
@@ -10,12 +13,22 @@ from app.db.db_helper import db_helper as db_lifespan
 from app.utils.tasks import hourly_sync_task
 
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    #startapp
+    # startup
+    redis_client = redis.from_url(
+        "redis://redis:6379",
+        encoding="utf-8",
+        decode_responses=True
+    )
+    await FastAPILimiter.init(redis_client)
+
     asyncio.create_task(hourly_sync_task())
+
     yield
-    #shutdown
+
+    # shutdown
     logger.info("dispose db engine")
     await db_lifespan.dispose()
 

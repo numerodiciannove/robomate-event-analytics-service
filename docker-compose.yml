@@ -19,6 +19,15 @@ services:
     networks:
       - app_network
 
+  redis:
+    image: redis:8.2.2-alpine3.22
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - app_network
+
   api:
     container_name: events_api
     build:
@@ -32,6 +41,7 @@ services:
       - ".:/app"
     depends_on:
       - pg
+      - redis
     networks:
       - app_network
 

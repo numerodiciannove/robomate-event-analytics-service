@@ -1,9 +1,10 @@
 import time
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Depends
 from pydantic import conlist
 from app.schemas.events import EventSchema
 from app.services import event_processor
+from fastapi_limiter.depends import RateLimiter
 
 
 events_router = APIRouter()
@@ -11,6 +12,7 @@ events_router = APIRouter()
 @events_router.post(
     "/events",
     status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(RateLimiter(times=5, seconds=60))]
 )
 async def ingest_events(
     events: conlist(EventSchema, min_length=1),

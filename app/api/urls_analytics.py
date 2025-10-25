@@ -1,5 +1,6 @@
 import pandas as pd
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
+from fastapi_limiter.depends import RateLimiter
 from starlette.responses import JSONResponse
 from datetime import date
 import asyncio
@@ -15,7 +16,7 @@ def df_to_json_response(df: pd.DataFrame):
     return JSONResponse(content=json.loads(df.to_json(orient="records", date_format='iso')))
 
 
-@analytics_router.get("/dau")
+@analytics_router.get("/dau", dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 async def get_dau(
         from_date: date = Query(..., description="Start date (YYYY-MM-DD)"),
         to_date: date = Query(..., description="End date (YYYY-MM-DD)"),
@@ -25,7 +26,7 @@ async def get_dau(
     return df_to_json_response(df)
 
 
-@analytics_router.get("/top-events")
+@analytics_router.get("/top-events", dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 async def get_top_events(
         from_date: date = Query(..., description="Start date (YYYY-MM-DD)"),
         to_date: date = Query(..., description="End date (YYYY-MM-DD)"),
@@ -36,7 +37,7 @@ async def get_top_events(
     return df_to_json_response(df)
 
 
-@analytics_router.get("/retention")
+@analytics_router.get("/retention", dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 async def get_retention(
         start_date: date = Query(..., description="Start date for cohort calculation (YYYY-MM-DD)"),
         windows: int = Query(4, ge=2, description="Number of weekly windows for analysis (including week 0)"),
