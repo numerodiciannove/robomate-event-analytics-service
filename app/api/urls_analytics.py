@@ -8,6 +8,8 @@ import json
 import time
 
 from app.services.analytics_service import analytics_service
+from app.db.models.users import User as DBUser
+from app.services.jwt_service import get_current_user
 
 analytics_router = APIRouter(prefix="/stats")
 
@@ -23,6 +25,7 @@ def df_to_json_response(df: pd.DataFrame, elapsed_sec: float):
 
 @analytics_router.get("/dau", dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 async def get_dau(
+        current_user: DBUser = Depends(get_current_user),
         from_date: date = Query(..., description="Start date (YYYY-MM-DD)"),
         to_date: date = Query(..., description="End date (YYYY-MM-DD)"),
 ):
@@ -35,6 +38,7 @@ async def get_dau(
 
 @analytics_router.get("/top-events", dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 async def get_top_events(
+        current_user: DBUser = Depends(get_current_user),
         from_date: date = Query(..., description="Start date (YYYY-MM-DD)"),
         to_date: date = Query(..., description="End date (YYYY-MM-DD)"),
         limit: int = Query(10, gt=0, description="Limit for the number of events in the top list"),
@@ -48,6 +52,7 @@ async def get_top_events(
 
 @analytics_router.get("/retention", dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 async def get_retention(
+        current_user: DBUser = Depends(get_current_user),
         start_date: date = Query(..., description="Start date for cohort calculation (YYYY-MM-DD)"),
         windows: int = Query(4, ge=2, description="Number of weekly windows for analysis (including week 0)"),
 ):
