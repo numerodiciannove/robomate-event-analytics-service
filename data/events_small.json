@@ -1,0 +1,111 @@
+[
+  {
+    "event_id": "25a4b866-040b-466f-945c-148e4720f511",
+    "occurred_at": "2025-08-21T06:52:34+03:00",
+    "user_id": 1,
+    "event_type": "view_item",
+    "properties_json": {
+      "country": "PL",
+      "session_id": "5ef18783",
+      "item_id": "SKU6991",
+      "price": 118.64,
+      "currency": "USD"
+    }
+  },
+  {
+    "event_id": "7b5ed1eb-83df-4255-a283-87fd4140b95e",
+    "occurred_at": "2025-08-03T13:04:15+03:00",
+    "user_id": 2,
+    "event_type": "login",
+    "properties_json": {
+      "country": "PL",
+      "session_id": "533e684a",
+      "method": "apple"
+    }
+  },
+  {
+    "event_id": "6e562266-b131-4fa7-a118-d156cc427dd9",
+    "occurred_at": "2025-08-08T15:37:03+03:00",
+    "user_id": 18,
+    "event_type": "app_open",
+    "properties_json": {
+      "country": "SE",
+      "session_id": "787818bd",
+      "app_version": "1.9.6",
+      "os": "iOS"
+    }
+  },
+  {
+    "event_id": "1eed09e8-01cd-4f5b-881f-7b9ec9b6dc62",
+    "occurred_at": "2025-08-28T08:26:09+03:00",
+    "user_id": 1,
+    "event_type": "logout",
+    "properties_json": {
+      "country": "NL",
+      "session_id": "fa17a4bc",
+      "method": "password"
+    }
+  },
+  {
+    "event_id": "828fd8ad-347c-4703-825f-364158a85a70",
+    "occurred_at": "2025-08-22T09:37:36+03:00",
+    "user_id": 17,
+    "event_type": "add_to_cart",
+    "properties_json": {
+      "country": "RO",
+      "session_id": "07194321",
+      "item_id": "SKU4078",
+      "qty": 2
+    }
+  },
+  {
+    "event_id": "e6021abb-26bf-46b2-9b3b-db8d762a7b28",
+    "occurred_at": "2025-08-19T06:13:31+03:00",
+    "user_id": 55,
+    "event_type": "app_open",
+    "properties_json": {
+      "country": "RO",
+      "session_id": "070da4c1",
+      "app_version": "1.8.6",
+      "os": "Android"
+    }
+  },
+  {
+    "event_id": "bad55a8d-3bba-48fd-bc1c-c8925cfdb19c",
+    "occurred_at": "2025-08-12T11:50:11+03:00",
+    "user_id": 365,
+    "event_type": "view_item",
+    "properties_json": {
+      "country": "KZ",
+      "session_id": "8ade81e8",
+      "item_id": "SKU4999",
+      "price": 20.96,
+      "currency": "USD"
+    }
+  },
+  {
+    "event_id": "5ad8272a-fbcf-4145-8bac-2010fdb57c63",
+    "occurred_at": "2025-08-11T17:18:38+03:00",
+    "user_id": 11,
+    "event_type": "view_item",
+    "properties_json": {
+      "country": "PL",
+      "session_id": "89db09f7",
+      "item_id": "SKU2934",
+      "price": 104.83,
+      "currency": "USD"
+    }
+  },
+  {
+    "event_id": "fc2577c9-6cf9-4efc-86fd-463f091f8517",
+    "occurred_at": "2025-08-30T13:02:42+03:00",
+    "user_id": 4,
+    "event_type": "app_open",
+    "properties_json": {
+      "country": "PL",
+      "session_id": "6bed83c2",
+      "app_version": "1.8.9",
+      "os": "Android"
+    }
+  }
+]
