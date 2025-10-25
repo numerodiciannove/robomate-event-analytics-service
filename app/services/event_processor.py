@@ -1,36 +1,57 @@
-import logging
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.dialects.postgresql import insert
+import uuid
+from typing import List
+import asyncpg
+import json
 
-from app.db.db_helper import db_helper
-from app.db.models.event import Event
+from loguru import logger
+
+from app.core.config import settings
+
 from app.schemas.events import EventSchema
 
-logger = logging.getLogger("uvicorn.app")
 
+async def process_events(events: List[EventSchema]) -> int:
+    """
+    High-performance data ingestion using asyncpg.executemany.
+    Explicit JSON serialization is applied for compatibility with asyncpg.
+    """
 
-@db_helper.connection
-async def process_events(
-    events: list[EventSchema],
-    *,
-    session: AsyncSession
-) -> int:
-    data_to_insert = [event.model_dump() for event in events]
-
-    if not data_to_insert:
+    try:
+        dsn = str(settings.db.url).replace("postgresql+asyncpg://", "postgresql://")
+        conn = await asyncpg.connect(dsn=dsn)
+    except Exception as e:
+        logger.error(f"Database connection error: {e}")
         return 0
 
-    insert_stmt = (
-        insert(Event)
-        .values(data_to_insert)
-        .on_conflict_do_nothing(index_elements=['event_id'])
-        .returning(Event.event_id)
-    )
+    try:
+        data_to_copy = []
+        for event in events:
+            new_id = uuid.uuid4()
+            properties_json_str = json.dumps(event.properties_json)
+            data_to_copy.append((
+                new_id,
+                event.event_id,
+                event.user_id,
+                event.occurred_at,
+                event.event_type,
+                properties_json_str,
+            ))
 
-    result = await session.execute(insert_stmt)
-    await session.commit()
+        query_insert = """
+            INSERT INTO events (id, event_id, user_id, occurred_at, event_type, properties_json)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (event_id) DO NOTHING
+        """
 
-    rows_inserted = len(result.fetchall())
-    logger.info(f"Inserted {rows_inserted} new events. Duplicates ignored.")
+        await conn.executemany(query_insert, data_to_copy)
 
-    return rows_inserted
+        logger.info(f"Attempted to process {len(data_to_copy)} events via asyncpg.executemany.")
+
+        return len(data_to_copy)
+
+    except Exception as e:
+        logger.error(f"Error executing batch asyncpg query: {e}")
+        raise
+
+    finally:
+        await conn.close()

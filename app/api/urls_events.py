@@ -28,7 +28,7 @@ async def ingest_events(
 
     return {
         "message": "Successfully processed events.",
-        "attempted_count": rows_processed,
+        "obj_count": rows_processed,
         "response_time_sec": round(elapsed, 4),
         "user_id": current_user.id
     }
