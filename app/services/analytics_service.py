@@ -2,6 +2,8 @@ import duckdb
 import pandas as pd
 import asyncio
 from datetime import date
+
+from loguru import logger
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 
 from app.core.config import settings
@@ -10,25 +12,29 @@ PG_CONN_STRING = str(settings.db.url)
 DUCKDB_FILE = "analytics.duckdb"
 
 
-
 class AnalyticsService:
     def __init__(self):
         self.pg_engine: AsyncEngine = create_async_engine(PG_CONN_STRING)
 
-    async def sync_data_from_postgres(self):
-        """Читає всі дані з PostgreSQL та замінює таблицю у DuckDB.
-        Використовує окреме підключення для запису."""
+    @staticmethod
+    async def sync_data_from_postgres():
+        """
+        Reads all data from PostgreSQL and replaces the table in DuckDB.
+        Uses a separate connection for writing.
+        """
 
         clean_pg_url = PG_CONN_STRING.replace("+asyncpg", "")
+
         def execute_sync_query():
             with duckdb.connect(database=DUCKDB_FILE, read_only=False) as write_conn:
                 sql_query = f"""
                     INSTALL postgres;
                     LOAD postgres;
 
-                    -- Використовуємо postgres_scan для читання з PG.
-                    -- CREATE OR REPLACE TABLE створює таблицю, якщо вона не існує, і повністю 
-                    -- замінює вміст, що усуває потребу в окремій логіці CREATE TABLE IF NOT EXISTS.
+                    -- Use postgres_scan to read from PostgreSQL.
+                    -- CREATE OR REPLACE TABLE creates the table if it doesn’t exist
+                    -- and fully replaces its contents, eliminating the need for
+                    -- separate CREATE TABLE IF NOT EXISTS logic.
                     CREATE OR REPLACE TABLE synced_events AS
                     SELECT 
                         event_id AS event_id, 
@@ -43,18 +49,18 @@ class AnalyticsService:
 
         try:
             record_count = await asyncio.to_thread(execute_sync_query)
-            print(f"✅ Синхронізація завершена. Кількість записів: {record_count}")
+            logger.success(f"✅ Synchronization completed. Record count: {record_count}")
         except duckdb.IOException as e:
             if "Conflicting lock is held" in str(e):
-                print("⚠️ Синхронізація пропущена: Файл DuckDB заблоковано іншим процесом (Uvicorn worker).")
+                logger.warning("⚠️ Synchronization skipped: DuckDB file is locked by another process (Uvicorn worker).")
             else:
-                print(f"!!! Помилка синхронізації: {e}")
+                logger.error(f"!!! Synchronization error: {e}")
         except Exception as e:
-            print(f"!!! Помилка синхронізації: {e}")
+            logger.error(f"!!! Synchronization error: {e}")
 
-
-    def get_dau(self, from_date: date, to_date: date) -> pd.DataFrame:
-        """GET /stats/dau: Кількість унікальних user_id по днях."""
+    @staticmethod
+    def get_dau(from_date: date, to_date: date) -> pd.DataFrame:
+        """GET /stats/dau: Number of unique user_id per day."""
         query = f"""
             SELECT
                 CAST(date_trunc('day', occurred_at) AS DATE) AS date,
@@ -68,8 +74,9 @@ class AnalyticsService:
         with duckdb.connect(database=DUCKDB_FILE, read_only=True) as read_conn:
             return read_conn.execute(query).fetchdf()
 
-    def get_top_events(self, from_date: date, to_date: date, limit: int = 10) -> pd.DataFrame:
-        """GET /stats/top-events: Топ event_type за кількістю."""
+    @staticmethod
+    def get_top_events(from_date: date, to_date: date, limit: int = 10) -> pd.DataFrame:
+        """GET /stats/top-events: Top event_type by count."""
         query = f"""
             SELECT
                 event_type,
@@ -84,17 +91,18 @@ class AnalyticsService:
         with duckdb.connect(database=DUCKDB_FILE, read_only=True) as read_conn:
             return read_conn.execute(query).fetchdf()
 
-    def get_retention(self, start_date: date, windows: int) -> pd.DataFrame:
+    @staticmethod
+    def get_retention(start_date: date, windows: int) -> pd.DataFrame:
         """
-        GET /stats/retention: Простий когортний ретеншн (тижневі вікна).
-        Визначаємо когорту за тижнем першої активності.
+        GET /stats/retention: Simple cohort retention (weekly windows).
+        Determines cohorts based on the week of the first activity.
         """
         query = f"""
         WITH 
         FirstActivity AS (
             SELECT
                 user_id,
-                -- Визначаємо тиждень приєднання (когорту)
+                -- Determine the week of first activity (cohort)
                 date_trunc('week', occurred_at) AS cohort_week
             FROM synced_events
             WHERE occurred_at >= CAST('{start_date}' AS DATE)

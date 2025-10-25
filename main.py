@@ -2,31 +2,21 @@ import asyncio
 from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
+from loguru import logger
 
 from app.api.routers import main_router
 from app.core.config import settings
 from app.db.db_helper import db_helper as db_lifespan
-from app.services.analytics_service import analytics_service
+from app.utils.tasks import hourly_sync_task
 
-
-# async def hourly_sync_task():
-#     while True:
-#         try:
-#             print("--- Запуск годинної синхронізації даних з PostgreSQL до DuckDB ---")
-#             await analytics_service.sync_data_from_postgres()
-#         except Exception as e:
-#             print(f"!!! Помилка синхронізації: {e}")
-#
-#         # Чекаємо 1 годину (3600 секунд)
-#         await asyncio.sleep(120)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     #startapp
-    # asyncio.create_task(hourly_sync_task())
+    asyncio.create_task(hourly_sync_task())
     yield
     #shutdown
-    # print("dispose db engine")
+    logger.info("dispose db engine")
     await db_lifespan.dispose()
 
 main_app = FastAPI(lifespan=lifespan)
