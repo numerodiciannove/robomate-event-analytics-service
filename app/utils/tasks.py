@@ -13,4 +13,4 @@ async def hourly_sync_task():
         except Exception as e:
             logger.error(f"!!! Synchronization error: {e}")
 
-        await asyncio.sleep(120)
+        await asyncio.sleep(3600)

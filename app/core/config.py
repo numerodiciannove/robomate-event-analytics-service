@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic import PostgresDsn
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -30,6 +30,14 @@ class DatabaseConfig(BaseModel):
     temp_engine_ttl: int = 1800 # время хранения отдельного подключения к отдельной бд через апи в сек.
     connection_check_interval: int = 60 # как часто проверять когда нужно удалить старые подключения в сек.
 
+
+class AuthConfig(BaseModel):
+    secret_key: str = Field(...)
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
@@ -41,6 +49,8 @@ class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     api: ApiPrefixConfig = ApiPrefixConfig()
     db: DatabaseConfig
+    auth: AuthConfig
 
 settings = Settings()
-# print(settings.db.url)
+
+
